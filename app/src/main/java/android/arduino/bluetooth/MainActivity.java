@@ -1,15 +1,14 @@
 package android.arduino.bluetooth;
 
 import android.app.Activity;
+import android.arduino.bluetooth.Controllers.CarDetailsController;
+import android.arduino.bluetooth.Interfaces.ICallback;
+import android.arduino.bluetooth.config.Constants;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
 import android.os.Bundle;
-import android.arduino.bluetooth.config.Config;
-import android.util.Base64;
-import android.util.Base64InputStream;
-import android.util.Base64OutputStream;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,8 +17,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -27,14 +24,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.io.Serializable;
 import java.util.UUID;
 
 import android.os.Handler;
+
+import com.google.gson.Gson;
 
 
 public class MainActivity extends Activity {
@@ -68,6 +64,7 @@ public class MainActivity extends Activity {
             public void handleMessage(android.os.Message msg) {
                 if (msg.what == handlerState) {                                     //if message is what we want
                     String readMessage = (String) msg.obj;
+                    sendToServer(readMessage);
                     writeToSDFile(readMessage + "\n");
                     blueToothData.setText(readFromSdCard());
                 }
@@ -202,32 +199,6 @@ public class MainActivity extends Activity {
 //        }
     }
 
-    public static Object stringToObject(String str) {
-        try {
-            return new ObjectInputStream(new Base64InputStream(
-                    new ByteArrayInputStream(str.getBytes()), Base64.NO_PADDING
-                    | Base64.NO_WRAP)).readObject();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    public static String objectToString(Serializable obj) {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(
-                    new Base64OutputStream(baos, Base64.NO_PADDING
-                            | Base64.NO_WRAP));
-            oos.writeObject(obj);
-            oos.close();
-            return baos.toString("UTF-8");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -258,7 +229,7 @@ public class MainActivity extends Activity {
         File root = android.os.Environment.getExternalStorageDirectory();
         File dir = new File(root.getAbsolutePath());
         dir.mkdirs();
-        File file = new File(dir, Config.PATH_FOR_BLUETOOTH_INFO);
+        File file = new File(dir, Constants.PATH_FOR_BLUETOOTH_INFO);
 
         try {
             FileOutputStream f = new FileOutputStream(file, true);
@@ -278,7 +249,7 @@ public class MainActivity extends Activity {
         File root = android.os.Environment.getExternalStorageDirectory();
         File dir = new File(root.getAbsolutePath());
         dir.mkdirs();
-        File file = new File(dir, Config.PATH_FOR_BLUETOOTH_INFO);
+        File file = new File(dir, Constants.PATH_FOR_BLUETOOTH_INFO);
         String msg = new String();
         try {
             FileInputStream inputStream = new FileInputStream(file);
@@ -344,4 +315,25 @@ public class MainActivity extends Activity {
 //        return ret;
 //    }
 
+    /**
+     * Send to server
+     */
+
+    private void sendToServer(String msgString){
+        CarDetailsController carDetailsController = new CarDetailsController(getApplicationContext());
+        carDetailsController.sendCarDetails(msgString, getResponse());
+    }
+
+    private ICallback<String> getResponse() {
+        return new ICallback<String>() {
+            @Override
+            public void getResponse(String airIndexResponse) {
+                try {
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+    }
 }
